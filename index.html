@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Reaction Timer - Portfolio Project</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0F172A;
+            color: #F1F5F9;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        .ui-overlay {
+            position: relative;
+            z-index: 10;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            pointer-events: none;
+        }
+        
+        .header {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.8) 100%);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem 2rem;
+            pointer-events: auto;
+        }
+        
+        h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #3B82F6 0%, #10B981 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            color: #94A3B8;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .game-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+        
+        .instructions {
+            background: rgba(30, 41, 59, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 500px;
+            margin-bottom: 2rem;
+            pointer-events: auto;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .instructions h2 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #F1F5F9;
+        }
+        
+        .instructions p {
+            color: #94A3B8;
+            line-height: 1.6;
+            margin-bottom: 0.75rem;
+        }
+        
+        .instructions ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .instructions li {
+            color: #94A3B8;
+            margin-bottom: 0.5rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+        
+        .instructions li:before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: #3B82F6;
+        }
+        
+        .game-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            pointer-events: auto;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        button.secondary {
+            background: rgba(30, 41, 59, 0.9);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        
+        .status-message {
+            background: rgba(30, 41, 59, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 0.75rem;
+            padding: 1rem 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            min-width: 300px;
+            pointer-events: auto;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .status-message.waiting {
+            border-color: rgba(245, 158, 11, 0.3);
+            background: rgba(245, 158, 11, 0.1);
+        }
+        
+        .status-message.ready {
+            border-color: rgba(16, 185, 129, 0.3);
+            background: rgba(16, 185, 129, 0.1);
+        }
+        
+        .status-message.error {
+            border-color: rgba(239, 68, 68, 0.3);
+            background: rgba(239, 68, 68, 0.1);
+        }
+        
+        .result-display {
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            pointer-events: auto;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .result-time {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #10B981 0%, #3B82F6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+        
+        .result-label {
+            color: #94A3B8;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .stats-container {
+            background: rgba(30, 41, 59, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            position: absolute;
+            bottom: 2rem;
+            left: 2rem;
+            pointer-events: auto;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            min-width: 200px;
+        }
+        
+        .stats-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #F1F5F9;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            color: #94A3B8;
+            font-size: 0.875rem;
+        }
+        
+        .stat-value {
+            color: #F1F5F9;
+            font-weight: 600;
+        }
+        
+        .click-zone {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            cursor: pointer;
+            display: none;
+            pointer-events: auto;
+        }
+        
+        .click-zone.active {
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .instructions {
+                padding: 1.5rem;
+                margin: 1rem;
+            }
+            
+            .stats-container {
+                bottom: 1rem;
+                left: 1rem;
+                right: 1rem;
+            }
+            
+            .result-time {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    
+    <div class="ui-overlay">
+        <header class="header">
+            <h1>3D Reaction Timer</h1>
+            <p class="subtitle">Test your reflexes with immersive 3D visuals</p>
+        </header>
+        
+        <div class="game-area">
+            <div id="instructions" class="instructions">
+                <h2>How to Play</h2>
+                <p>Test your reaction speed in this 3D experience!</p>
+                <ul>
+                    <li>Click "Start Game" to begin</li>
+                    <li>Watch the 3D sphere in the center</li>
+                    <li>Wait for it to turn green and pulse</li>
+                    <li>Click anywhere as fast as you can!</li>
+                    <li>Don't click early or it's a false start</li>
+                </ul>
+            </div>
+            
+            <div id="status" class="status-message" style="display: none;"></div>
+            
+            <div id="result" class="result-display" style="display: none;">
+                <div class="result-time" id="result-time">0ms</div>
+                <div class="result-label">Reaction Time</div>
+            </div>
+            
+            <div class="game-controls">
+                <button id="startBtn">Start Game</button>
+                <button id="resetBtn" class="secondary">Reset Stats</button>
+            </div>
+        </div>
+        
+        <div class="stats-container">
+            <div class="stats-title">Session Statistics</div>
+            <div class="stat-item">
+                <span>Attempts:</span>
+                <span class="stat-value" id="attempts">0</span>
+            </div>
+            <div class="stat-item">
+                <span>Best Time:</span>
+                <span class="stat-value" id="best">-</span>
+            </div>
+            <div class="stat-item">
+                <span>Average:</span>
+                <span class="stat-value" id="average">-</span>
+            </div>
+        </div>
+    </div>
+    
+    <div id="clickZone" class="click-zone"></div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Game state management
+        const GameState = {
+            IDLE: 'idle',
+            WAITING: 'waiting',
+            READY: 'ready',
+            COMPLETE: 'complete',
+            FALSE_START: 'falseStart'
+        };
+        
+        class ReactionTimer {
+            constructor() {
+                this.state = GameState.IDLE;
+                this.startTime = 0;
+                this.attempts = [];
+                this.timeout = null;
+                
+                // Three.js setup
+                this.scene = null;
+                this.camera = null;
+                this.renderer = null;
+                this.sphere = null;
+                this.particles = [];
+                this.animationId = null;
+                
+                this.init();
+                this.setupEventListeners();
+            }
+            
+            init() {
+                // Three.js scene setup
+                this.scene = new THREE.Scene();
+                this.scene.fog = new THREE.Fog(0x0F172A, 10, 50);
+                
+                // Camera
+                this.camera = new THREE.PerspectiveCamera(
+                    75,
+                    window.innerWidth / window.innerHeight,
+                    0.1,
+                    1000
+                );
+                this.camera.position.z = 5;
+                
+                // Renderer
+                this.renderer = new THREE.WebGLRenderer({ 
+                    antialias: true,
+                    alpha: true 
+                });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(window.devicePixelRatio);
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                document.getElementById('canvas-container').appendChild(this.renderer.domElement);
+                
+                // Lighting
+                const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+                this.scene.add(ambientLight);
+                
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+                directionalLight.position.set(5, 10, 5);
+                directionalLight.castShadow = true;
+                directionalLight.shadow.camera.near = 0.1;
+                directionalLight.shadow.camera.far = 50;
+                directionalLight.shadow.camera.left = -10;
+                directionalLight.shadow.camera.right = 10;
+                directionalLight.shadow.camera.top = 10;
+                directionalLight.shadow.camera.bottom = -10;
+                this.scene.add(directionalLight);
+                
+                const pointLight = new THREE.PointLight(0x3B82F6, 0.5, 100);
+                pointLight.position.set(0, 0, 2);
+                this.scene.add(pointLight);
+                
+                // Main sphere
+                const geometry = new THREE.SphereGeometry(1, 32, 32);
+                const material = new THREE.MeshPhongMaterial({
+                    color: 0x1E293B,
+                    emissive: 0x1E293B,
+                    emissiveIntensity: 0.2,
+                    shininess: 100
+                });
+                this.sphere = new THREE.Mesh(geometry, material);
+                this.sphere.castShadow = true;
+                this.sphere.receiveShadow = true;
+                this.scene.add(this.sphere);
+                
+                // Orbiting particles
+                this.createParticles();
+                
+                // Background stars
+                this.createStars();
+                
+                this.animate();
+            }
+            
+            createParticles() {
+                const particleCount = 8;
+                for (let i = 0; i < particleCount; i++) {
+                    const geometry = new THREE.IcosahedronGeometry(0.1, 0);
+                    const material = new THREE.MeshPhongMaterial({
+                        color: 0x3B82F6,
+                        emissive: 0x3B82F6,
+                        emissiveIntensity: 0.5
+                    });
+                    const particle = new THREE.Mesh(geometry, material);
+                    
+                    const angle = (i / particleCount) * Math.PI * 2;
+                    const radius = 2;
+                    particle.userData = { angle, radius, speed: 0.5 + Math.random() * 0.5 };
+                    
+                    this.particles.push(particle);
+                    this.scene.add(particle);
+                }
+            }
+            
+            createStars() {
+                const starsGeometry = new THREE.BufferGeometry();
+                const starCount = 1000;
+                const positions = new Float32Array(starCount * 3);
+                
+                for (let i = 0; i < starCount * 3; i += 3) {
+                    positions[i] = (Math.random() - 0.5) * 100;
+                    positions[i + 1] = (Math.random() - 0.5) * 100;
+                    positions[i + 2] = (Math.random() - 0.5) * 100 - 10;
+                }
+                
+                starsGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                
+                const starsMaterial = new THREE.PointsMaterial({
+                    color: 0x94A3B8,
+                    size: 0.05,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                
+                const stars = new THREE.Points(starsGeometry, starsMaterial);
+                this.scene.add(stars);
+            }
+            
+            animate() {
+                this.animationId = requestAnimationFrame(() => this.animate());
+                
+                // Rotate sphere
+                if (this.sphere) {
+                    this.sphere.rotation.x += 0.005;
+                    this.sphere.rotation.y += 0.005;
+                    
+                    // Pulsing effect when ready
+                    if (this.state === GameState.READY) {
+                        const scale = 1 + Math.sin(Date.now() * 0.01) * 0.1;
+                        this.sphere.scale.set(scale, scale, scale);
+                    } else {
+                        this.sphere.scale.set(1, 1, 1);
+                    }
+                }
+                
+                // Animate particles
+                this.particles.forEach(particle => {
+                    particle.userData.angle += particle.userData.speed * 0.01;
+                    const x = Math.cos(particle.userData.angle) * particle.userData.radius;
+                    const y = Math.sin(particle.userData.angle) * particle.userData.radius;
+                    const z = Math.sin(particle.userData.angle * 2) * 0.5;
+                    particle.position.set(x, y, z);
+                    particle.rotation.x += 0.02;
+                    particle.rotation.y += 0.02;
+                });
+                
+                this.renderer.render(this.scene, this.camera);
+            }
+            
+            setupEventListeners() {
+                document.getElementById('startBtn').addEventListener('click', () => this.startGame());
+                document.getElementById('resetBtn').addEventListener('click', () => this.resetStats());
+                document.getElementById('clickZone').addEventListener('click', () => this.handleClick());
+                
+                window.addEventListener('resize', () => {
+                    this.camera.aspect = window.innerWidth / window.innerHeight;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                });
+            }
+            
+            startGame() {
+                if (this.state !== GameState.IDLE && this.state !== GameState.COMPLETE) return;
+                
+                this.state = GameState.WAITING;
+                this.hideElements(['instructions', 'result']);
+                this.showStatus('Wait for green...', 'waiting');
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('clickZone').classList.add('active');
+                
+                // Set sphere to waiting color
+                this.sphere.material.color.setHex(0xF59E0B);
+                this.sphere.material.emissive.setHex(0xF59E0B);
+                
+                // Random delay between 1-5 seconds
+                const delay = 1000 + Math.random() * 4000;
+                
+                this.timeout = setTimeout(() => {
+                    this.state = GameState.READY;
+                    this.startTime = performance.now();
+                    this.showStatus('CLICK NOW!', 'ready');
+                    
+                    // Set sphere to ready color
+                    this.sphere.material.color.setHex(0x10B981);
+                    this.sphere.material.emissive.setHex(0x10B981);
+                    
+                    // Burst effect
+                    this.createBurst();
+                }, delay);
+            }
+            
+            createBurst() {
+                const burstParticles = [];
+                for (let i = 0; i < 20; i++) {
+                    const geometry = new THREE.SphereGeometry(0.05, 8, 8);
+                    const material = new THREE.MeshBasicMaterial({
+                        color: 0x10B981,
+                        transparent: true,
+                        opacity: 1
+                    });
+                    const particle = new THREE.Mesh(geometry, material);
+                    
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.random() * Math.PI;
+                    const velocity = {
+                        x: Math.sin(phi) * Math.cos(theta) * 0.1,
+                        y: Math.sin(phi) * Math.sin(theta) * 0.1,
+                        z: Math.cos(phi) * 0.1
+                    };
+                    
+                    particle.userData = { velocity, life: 1 };
+                    this.scene.add(particle);
+                    burstParticles.push(particle);
+                }
+                
+                // Animate burst
+                const animateBurst = () => {
+                    let allDead = true;
+                    burstParticles.forEach(particle => {
+                        if (particle.userData.life > 0) {
+                            allDead = false;
+                            particle.position.x += particle.userData.velocity.x;
+                            particle.position.y += particle.userData.velocity.y;
+                            particle.position.z += particle.userData.velocity.z;
+                            particle.userData.life -= 0.02;
+                            particle.material.opacity = particle.userData.life;
+                            particle.scale.setScalar(particle.userData.life);
+                        }
+                    });
+                    
+                    if (!allDead) {
+                        requestAnimationFrame(animateBurst);
+                    } else {
+                        burstParticles.forEach(particle => {
+                            this.scene.remove(particle);
+                            particle.geometry.dispose();
+                            particle.material.dispose();
+                        });
+                    }
+                };
+                animateBurst();
+            }
+            
+            handleClick() {
+                if (this.state === GameState.WAITING) {
+                    // False start
+                    this.state = GameState.FALSE_START;
+                    clearTimeout(this.timeout);
+                    this.showStatus('Too early! False start!', 'error');
+                    this.sphere.material.color.setHex(0xEF4444);
+                    this.sphere.material.emissive.setHex(0xEF4444);
+                    this.endGame();
+                } else if (this.state === GameState.READY) {
+                    // Valid reaction
+                    const reactionTime = performance.now() - this.startTime;
+                    this.state = GameState.COMPLETE;
+                    this.attempts.push(reactionTime);
+                    this.showResult(reactionTime);
+                    this.updateStats();
+                    this.sphere.material.color.setHex(0x3B82F6);
+                    this.sphere.material.emissive.setHex(0x3B82F6);
+                    this.endGame();
+                }
+            }
+            
+            endGame() {
+                clearTimeout(this.timeout);
+                document.getElementById('clickZone').classList.remove('active');
+                document.getElementById('startBtn').disabled = false;
+                
+                setTimeout(() => {
+                    this.sphere.material.color.setHex(0x1E293B);
+                    this.sphere.material.emissive.setHex(0x1E293B);
+                    this.hideElements(['status']);
+                    this.state = GameState.IDLE;
+                }, 2000);
+            }
+            
+            showStatus(message, className) {
+                const status = document.getElementById('status');
+                status.textContent = message;
+                status.className = 'status-message ' + className;
+                status.style.display = 'block';
+            }
+            
+            showResult(time) {
+                document.getElementById('result-time').textContent = Math.round(time) + 'ms';
+                document.getElementById('result').style.display = 'block';
+                this.hideElements(['status']);
+            }
+            
+            updateStats() {
+                document.getElementById('attempts').textContent = this.attempts.length;
+                
+                if (this.attempts.length > 0) {
+                    const best = Math.min(...this.attempts);
+                    const average = this.attempts.reduce((a, b) => a + b, 0) / this.attempts.length;
+                    
+                    document.getElementById('best').textContent = Math.round(best) + 'ms';
+                    document.getElementById('average').textContent = Math.round(average) + 'ms';
+                }
+            }
+            
+            resetStats() {
+                this.attempts = [];
+                document.getElementById('attempts').textContent = '0';
+                document.getElementById('best').textContent = '-';
+                document.getElementById('average').textContent = '-';
+                this.hideElements(['result']);
+            }
+            
+            hideElements(ids) {
+                ids.forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) element.style.display = 'none';
+                });
+            }
+        }
+        
+        // Initialize game
+        const game = new ReactionTimer();
+    </script>
+</body>
+</html>
