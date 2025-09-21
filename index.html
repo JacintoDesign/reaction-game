@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reaction Timer - Portfolio Project</title>
-    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="icon" type="image/png" href="favicon.png">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap');
         
@@ -894,11 +894,7 @@
                     document.getElementById('gameBox').className = 'game-box idle';
                     document.getElementById('errorMessage').classList.remove('visible');
                     
-                    // Only show start hint, not instructions
-                    if (!this.hasPlayedBefore) {
-                        document.getElementById('instructionsOverlay').style.display = 'block';
-                        this.hasPlayedBefore = true;
-                    }
+                    // Only show start hint, never show instructions again after first play
                     document.getElementById('startHint').style.display = 'block';
                     
                     this.state = GameState.IDLE;
