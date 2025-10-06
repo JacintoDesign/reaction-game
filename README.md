@@ -80,10 +80,12 @@ const GameState = {
 ## 📁 Project Structure
 
 ```
-reaction-timer-game/
-├── index.html          # Main game file
-├── README.md           # This file
-└── favicon.png         # Game icon (optional)
+reaction-game/
+├── index.html    # App markup and layout (game UI, overlays, controls)
+├── styles.css    # Styling for layout, game box, overlays, responsive rules
+├── script.js     # Game logic, Three.js scene, state machine, controls
+├── favicon.png   # App icon
+└── README.md     # Project documentation
 ```
 
 ## 🚀 Getting Started
