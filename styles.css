@@ -436,3 +436,17 @@ button.secondary {
         font-size: 1.25rem;
     }
 }
+
+/* Make instructions overlay slightly larger than the canvas on mobile portrait */
+@media (max-width: 768px) and (orientation: portrait) {
+    .game-box {
+        /* Allow overlay to extend beyond the canvas bounds */
+        overflow: visible;
+    }
+
+    .instructions-overlay {
+        /* Slightly wider than the game box/canvas */
+        width: 101%;
+        max-width: none;
+    }
+}
