@@ -204,6 +204,28 @@ class ReactionTimer {
         // Button controls
         document.getElementById('startBtn').addEventListener('click', () => this.startGame());
         document.getElementById('resetBtn').addEventListener('click', () => this.resetStats());
+        // Info button opens instructions overlay
+        const infoBtn = document.getElementById('infoBtn');
+        if (infoBtn) {
+            infoBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const overlay = document.getElementById('instructionsOverlay');
+                const isHidden = window.getComputedStyle(overlay).display === 'none';
+
+                if (isHidden) {
+                    // Opening overlay: cancel any in-progress game without scoring
+                    this.cancelGame();
+                    overlay.style.display = 'block';
+                    document.getElementById('startHint').style.display = 'none';
+                } else {
+                    // Closing overlay
+                    overlay.style.display = 'none';
+                    if (this.state === GameState.IDLE) {
+                        document.getElementById('startHint').style.display = 'block';
+                    }
+                }
+            });
+        }
         
         // Click controls
         document.getElementById('clickOverlay').addEventListener('click', () => this.handleClick());
@@ -238,14 +260,37 @@ class ReactionTimer {
             this.renderer.setSize(width, height);
         });
     }
+
+    cancelGame() {
+        // Cancel if a run is in progress (waiting for green or already green)
+        if (this.state === GameState.WAITING || this.state === GameState.READY) {
+            clearTimeout(this.timeout);
+            // Reset UI elements immediately without scoring
+            document.getElementById('clickOverlay').classList.remove('active');
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('gameBox').className = 'game-box idle';
+            document.getElementById('errorMessage').classList.remove('visible');
+
+            // Reset visual state of the 3D object
+            if (this.dodecahedron) {
+                this.dodecahedron.material.color.setHex(0x1E293B);
+                this.dodecahedron.material.opacity = 0.7;
+                this.dodecahedron.scale.set(1, 1, 1);
+            }
+            if (this.glowLight) this.glowLight.intensity = 0;
+
+            // Return to idle state
+            this.state = GameState.IDLE;
+        }
+    }
     
     startGame() {
         if (this.state !== GameState.IDLE && this.state !== GameState.COMPLETE) return;
         
         this.state = GameState.WAITING;
         
-        // Hide instructions and start hint
-        document.getElementById('instructionsOverlay').style.display = 'none';
+    // Hide instructions and start hint
+    document.getElementById('instructionsOverlay').style.display = 'none';
         document.getElementById('startHint').style.display = 'none';
         
         document.getElementById('startBtn').disabled = true;
